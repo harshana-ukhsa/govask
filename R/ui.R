@@ -40,11 +40,20 @@ ui <- fluidPage(
       ),
       br(),
 
-      # ── Source citation table ─────────────────────────────────────────────
+      # ── Source citation table (collapsible) ──────────────────────────────
       conditionalPanel(
         condition = "output.has_sources",
-        h5("Source documents retrieved"),
-        DT::dataTableOutput("sources_table")
+        tags$details(
+          tags$summary(
+            style = paste(
+              "font-size:15px; font-weight:600;",
+              "cursor:pointer; margin-bottom:8px;",
+              "list-style:none;"            # remove default triangle on some browsers
+            ),
+            "\u25BC Source documents retrieved"  # ▼ indicator
+          ),
+          DT::dataTableOutput("sources_table")
+        )
       )
     )
   )

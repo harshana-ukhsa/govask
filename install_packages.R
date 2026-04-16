@@ -4,6 +4,7 @@
 pkgs <- c(
   # Shiny interface
   "shiny",
+  "duckdb",
   "bslib",
   "DT",
   "shinycssloaders",

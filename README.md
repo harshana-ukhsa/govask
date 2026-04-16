@@ -185,12 +185,10 @@ The `copilot-instructions.md` file meant that from the first prompt, Copilot kne
 
 All dependencies are pure CRAN packages — no system install rights required.
 
+From the R console, run the install script (it only installs packages that are missing):
+
 ```r
-install.packages(c(
-  "ragnar", "ellmer", "pdftools", "officer", "readxl",
-  "readr", "commonmark", "xml2", "rvest",
-  "shiny", "bslib", "DT", "shinycssloaders", "httr2"
-))
+source("install_packages.R")
 ```
 
 ### Configure LLM credentials
@@ -205,11 +203,13 @@ GPT_TOKEN=your-token-here
 
 ### Step 1 — Index documents
 
+Place documents in `data/structured_files/` and/or `data/unstructured_files/`. Then from the R console:
+
 ```r
-source("ingest_all.R")
+source("ref_code/rag_setup.R")
 ```
 
-Place documents in `challenge-2/structured_files/` and/or `challenge-2/unstructured_files/`. The pipeline discovers all supported file types automatically.
+The pipeline discovers all supported file types automatically.
 
 Expected output:
 
@@ -229,7 +229,7 @@ Store: data/rag_store.duckdb
 ### Step 2 — Launch the interface
 
 ```r
-shiny::runApp("app.R")
+shiny::runApp("R")
 ```
 
 Open the URL shown in the console. No further installation needed for end users.
@@ -242,7 +242,7 @@ Open the URL shown in the console. No further installation needed for end users.
 GovASK/
 ├── .github/
 │   ├── copilot-instructions.md
-│   ├── instructions/
+│   ├── interactions/instructions/
 │   │   ├── r-coding-standards.instructions.md
 │   │   ├── shiny-ui.instructions.md
 │   │   └── rag-pipeline.instructions.md
@@ -250,15 +250,19 @@ GovASK/
 │       ├── r-file-parser/SKILL.md
 │       ├── rag-prompt-engineering/SKILL.md
 │       └── shiny-component/SKILL.md
-├── challenge-2/
-│   ├── structured_files/     # 20 HTML/MD/TXT policy documents
-│   └── unstructured_files/   # 23 DOCX/PDF/XLSX departmental documents
 ├── data/
-│   └── rag_store.duckdb      # Generated — rebuild with ingest_all.R
+│   ├── structured_files/     # HTML/MD/TXT policy documents
+│   ├── unstructured_files/   # DOCX/PDF/XLSX departmental documents
+│   └── rag_store.duckdb      # Generated — rebuild with ref_code/rag_setup.R
 │                             # Excluded from git — safe to delete and rebuild
-├── ingest_all.R              # STEP 1: ingest all file types, build BM25 index
-├── rag_query.R               # STEP 2: retrieval, prompt, LLM call (also used by Shiny)
-├── app.R                     # STEP 3: Shiny browser interface
+├── R/
+│   ├── app.R                 # STEP 3: Shiny browser interface (entry point)
+│   ├── ui.R                  # UI definition
+│   └── rag_query.R           # Retrieval, prompt builder, LLM call
+├── ref_code/
+│   ├── rag_setup.R           # STEP 1: ingest documents, build BM25 index
+│   └── rag_query.R           # Reference implementation (CLI version)
+├── install_packages.R        # Install all CRAN dependencies
 ├── .Renviron                 # LLM credentials — NEVER commit this file
 ├── .gitignore
 └── README.md
