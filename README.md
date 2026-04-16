@@ -3,6 +3,8 @@
 > **AI Engineering Lab Hackathon 2026 · Challenge 2: Unlocking the Dark Data**  
 > Team: Harshana · Emma · Freddie · UKHSA Epidemiology Data Science
 
+[View presentation slides →](docs/presentation.html)
+
 ---
 
 ## The problem
