@@ -35,7 +35,7 @@ A user types a question. They get an answer. They can see exactly which document
 ---
 
 ## Example output
-<img src="docs/screen.png" alt="GovAsk RAG pipeline architecture" width="800">
+<img src="docs/screen.png" alt="GovAsk Screenshot" width="800">
 
 ---
 
