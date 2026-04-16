@@ -119,13 +119,7 @@ if (length(all_chunks) == 0) {
 
 # ── Step 4: Create the DuckDB store ──────────────────────────────────────────
 message("\nCreating EpiAsk store: ", STORE_PATH)
-if (file.exists(STORE_PATH)) {
-  file.remove(STORE_PATH)
-  message("  Removed existing store file.")
-}
-
-store <- ragnar_store_create(location = STORE_PATH, embed = NULL, overwrite = FALSE)
-
+store <- ragnar_store_create(location = STORE_PATH, embed = NULL, overwrite = TRUE)
 # ── Step 5: Insert chunks ─────────────────────────────────────────────────────
 for (chunks in all_chunks) {
   ragnar_store_insert(store, chunks)
