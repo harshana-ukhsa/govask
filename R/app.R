@@ -70,7 +70,7 @@ server <- function(input, output, session) {
     }
   )
   session$onSessionEnded(function() {
-    if (!is.null(meta_con)) DBI::dbDisconnect(meta_con, shutdown = TRUE)
+    if (!is.null(meta_con)) DBI::dbDisconnect(meta_con, shutdown = FALSE)
   })
 
   # ── Sidebar: corpus summary ──────────────────────────────────────────────────
