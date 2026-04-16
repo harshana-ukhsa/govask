@@ -3,10 +3,28 @@ library(bslib)
 library(DT)
 library(shinycssloaders)
 
-source("ui.R")
+get_app_dir <- function() {
+  file_arg_prefix <- "--file="
+  args <- commandArgs(trailingOnly = FALSE)
+  file_arg <- args[grepl(file_arg_prefix, args)]
+
+  if (length(file_arg) > 0) {
+    return(dirname(normalizePath(sub(file_arg_prefix, "", file_arg[1]))))
+  }
+
+  if (!is.null(sys.frames()[[1]]$ofile)) {
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+
+  normalizePath(getwd())
+}
+
+APP_DIR <- get_app_dir()
+
+source(file.path(APP_DIR, "ui.R"))
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-STORE_PATH <- "../data/rag_store.duckdb"
+STORE_PATH <- file.path(APP_DIR, "..", "data", "rag_store.duckdb")
 TOP_K      <- 5L
 
 # ── Server ────────────────────────────────────────────────────────────────────
