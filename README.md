@@ -1,7 +1,7 @@
 # 🏛️ GovASK — Government Document Intelligence
 
 > **AI Engineering Lab Hackathon 2026 · Challenge 2: Unlocking the Dark Data**  
-> Team: Harshana · Emma · Freddie · UKHSA Epidemiology Data Science
+> Team EpiDS: Harshana Liyanage · Emma Parker · Frederick Sloots · UKHSA Epidemiology Data Science
 
 [View presentation slides →](https://htmlpreview.github.io/?https://raw.githubusercontent.com/harshana-ukhsa/govask/dev/docs/presentation.html)
 
@@ -348,9 +348,9 @@ The team used GitHub Copilot to build every part of this pipeline — in R, in a
 
 | Person | Role |
 |--------|------|
-| **Harshana** | RAG architecture, prompt engineering, retrieval tuning, AI domain expertise, documentation |
-| **Emma** | Project management, Shiny UI, source citation interface, demo coordination |
-| **Freddie** | Multi-format ingestion pipeline, PARSER_REGISTRY, file-type extensions |
+| **Harshana Liyanage** | RAG architecture, prompt engineering, retrieval tuning, AI domain expertise, documentation |
+| **Emma Parker** | Project management, Shiny UI, source citation interface, demo coordination |
+| **Frederick Sloots** | Multi-format ingestion pipeline, PARSER_REGISTRY, file-type extensions |
 
 Built with [ragnar](https://ragnar.tidyverse.org/) · [ellmer](https://ellmer.tidyverse.org/) · [R Shiny](https://shiny.posit.co/) · [DuckDB](https://duckdb.org/)
 

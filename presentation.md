@@ -105,8 +105,8 @@ style: |
 AI Engineering Lab Hackathon 2026
 Challenge 2: Unlocking the Dark Data
 
-**Harshana · Emma · Freddie**
-UKHSA Public Health Data Science
+**Team EpiDS: Harshana Liyanage · Emma Parker · Frederick Sloots**
+UKHSA Epidemiology Data Science
 
 ---
 
@@ -190,9 +190,9 @@ Human-in-the-loop policy · Load testing
 
 | Person | Role |
 |---|---|
-| **Harshana** | RAG architecture, prompt engineering, AI domain expertise |
-| **Emma** | Project management, Shiny UI, demo coordination |
-| **Freddie** | Multi-format ingestion, file-type extensions |
+| **Harshana Liyanage** | RAG architecture, prompt engineering, AI domain expertise |
+| **Emma Parker** | Project management, Shiny UI, demo coordination |
+| **Frederick Sloots** | Multi-format ingestion, file-type extensions |
 
 Built with `ragnar` · `ellmer` · `R Shiny` · `DuckDB` · `GitHub Copilot`
 
