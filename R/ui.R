@@ -3,58 +3,82 @@ library(bslib)
 library(DT)
 library(shinycssloaders)
 
-# ── UI ────────────────────────────────────────────────────────────────────────
-ui <- fluidPage(
-  theme = bslib::bs_theme(bootswatch = "flatly"),
-  titlePanel("GovAsk — Government Document Intelligence"),
-
-  sidebarLayout(
-    sidebarPanel(
-      width = 3,
-      h5("Document corpus"),
-      uiOutput("corpus_summary"),
-      hr(),
-      h5("Filter by file type"),
-      uiOutput("type_filter")
-    ),
-
-    mainPanel(
-      width = 9,
-
-      # ── Question input ───────────────────────────────────────────────────
-      textAreaInput(
-        inputId     = "question",
-        label       = "Ask a question about the indexed documents:",
-        rows        = 3,
-        width       = "100%",
-        placeholder = "e.g. What is the eligibility threshold for housing support?"
+# ── Reusable tab panel builder ────────────────────────────────────────────────
+# Builds a consistent sidebarLayout panel for any RAG tab.
+# All output IDs are namespaced with `ns_` to avoid collisions between tabs.
+rag_tab_panel <- function(
+  tab_title,
+  ns,                  # namespace prefix string, e.g. "gov" or "epi"
+  question_placeholder = "e.g. What is the eligibility threshold for housing support?"
+) {
+  tabPanel(
+    tab_title,
+    br(),
+    sidebarLayout(
+      sidebarPanel(
+        width = 3,
+        h5("Document corpus"),
+        uiOutput(paste0(ns, "_corpus_summary")),
+        hr(),
+        h5("Filter by file type"),
+        uiOutput(paste0(ns, "_type_filter"))
       ),
-      actionButton("submit", "Search documents", class = "btn-primary"),
-      br(), br(),
+      mainPanel(
+        width = 9,
 
-      # ── Answer panel ─────────────────────────────────────────────────────
-      shinycssloaders::withSpinner(
-        uiOutput("answer_panel"),
-        type  = 4,
-        color = "#1A7A6E"
-      ),
-      br(),
+        # ── Question input ─────────────────────────────────────────────────
+        textAreaInput(
+          inputId     = paste0(ns, "_question"),
+          label       = "Ask a question about the indexed documents:",
+          rows        = 3,
+          width       = "100%",
+          placeholder = question_placeholder
+        ),
+        actionButton(paste0(ns, "_submit"), "Search documents", class = "btn-primary"),
+        br(), br(),
 
-      # ── Source citation table (collapsible) ──────────────────────────────
-      conditionalPanel(
-        condition = "output.has_sources",
-        tags$details(
-          tags$summary(
-            style = paste(
-              "font-size:15px; font-weight:600;",
-              "cursor:pointer; margin-bottom:8px;",
-              "list-style:none;"            # remove default triangle on some browsers
+        # ── Answer panel ───────────────────────────────────────────────────
+        shinycssloaders::withSpinner(
+          uiOutput(paste0(ns, "_answer_panel")),
+          type  = 4,
+          color = "#1A7A6E"
+        ),
+        br(),
+
+        # ── Source citation table (collapsible) ────────────────────────────
+        conditionalPanel(
+          condition = paste0("output.", ns, "_has_sources"),
+          tags$details(
+            tags$summary(
+              style = paste(
+                "font-size:15px; font-weight:600;",
+                "cursor:pointer; margin-bottom:8px;",
+                "list-style:none;"
+              ),
+              "\u25BC Source documents retrieved"
             ),
-            "\u25BC Source documents retrieved"  # ▼ indicator
-          ),
-          DT::dataTableOutput("sources_table")
+            DT::dataTableOutput(paste0(ns, "_sources_table"))
+          )
         )
       )
     )
+  )
+}
+
+# ── UI ────────────────────────────────────────────────────────────────────────
+ui <- navbarPage(
+  title = "GovAsk",
+  theme = bslib::bs_theme(bootswatch = "flatly"),
+
+  rag_tab_panel(
+    tab_title            = "GovAsk \u2014 Government Document Intelligence",
+    ns                   = "gov",
+    question_placeholder = "e.g. What is the eligibility threshold for housing support?"
+  ),
+
+  rag_tab_panel(
+    tab_title            = "EpiAsk \u2014 EpiDS Document Intelligence",
+    ns                   = "epi",
+    question_placeholder = "e.g. What are the methods used in the latest EpiDS report?"
   )
 )
