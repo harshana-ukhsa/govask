@@ -33,6 +33,35 @@ options(.govask_shiny_mode = TRUE)
 # before loading any helper code that may read them at source-time.
 readRenviron(here::here(".Renviron"))
 
+# =============================================================================
+# RAG PIPELINE: Run setup scripts to rebuild stores before querying
+# =============================================================================
+# This pipeline ensures stores are up-to-date each time the app starts:
+#   1. rag_setup.R  — ingest documents into data/rag_store.duckdb
+#   2. epi_setup.R  — ingest epids docs into data/epids_store.duckdb
+#   3. rag_query.R  — load query helpers (sourced below)
+
+message("Running RAG pipeline...")
+
+message("  [1/3] Running rag_setup.R...")
+tryCatch(
+
+  source(here::here("ref_code", "rag_setup.R"), local = new.env()),
+  error = function(e) {
+    warning("rag_setup.R failed: ", conditionMessage(e))
+  }
+)
+
+message("  [2/3] Running epi_setup.R...")
+tryCatch(
+  source(here::here("ref_code", "epi_setup.R"), local = new.env()),
+  error = function(e) {
+    warning("epi_setup.R failed: ", conditionMessage(e))
+  }
+)
+
+message("  [3/3] Loading rag_query.R helpers...")
+
 # Load reusable RAG helpers into an app-scoped environment so that
 # CLI-oriented top-level code does not pollute the Shiny app environment.
 rag_query_env <- new.env(parent = globalenv())
@@ -62,6 +91,9 @@ if (inherits(rag_query_error, "error") &&
     )
   )
 }
+
+message("RAG pipeline complete.")
+
 # ── Constants ─────────────────────────────────────────────────────────────────
 STORE_PATH     <- here::here("data", "rag_store.duckdb")
 EPI_STORE_PATH <- here::here("data", "epids_store.duckdb")
