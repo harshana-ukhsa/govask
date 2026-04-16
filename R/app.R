@@ -79,6 +79,7 @@ tryCatch(
   }
 )
 
+message("  [3/3] Loading rag_query.R and epi_query.R helpers...")
 message("  [4/5] Running api_setup.R...")
 tryCatch(
   source(here::here("ref_code", "api_setup.R"), local = new.env()),
@@ -95,6 +96,7 @@ rag_query_env <- new.env(parent = globalenv())
 rag_query_error <- tryCatch(
   {
     sys.source(here::here("ref_code", "rag_query.R"), envir = rag_query_env)
+    sys.source(here::here("ref_code", "epi_query.R"), envir = rag_query_env)
     NULL
   },
   error = function(e) {
@@ -127,6 +129,24 @@ EPI_STORE_PATH <- here::here("data", "epids_store.duckdb")
 API_STORE_PATH <- here::here("data", "api_store.duckdb")
 TOP_K          <- 5L
 
+#' Dispatch to the correct per-namespace category derivation function
+#'
+#' Note: this derivation is synchronous. If it triggers LLM-backed helpers,
+#' it runs in the current Shiny R process and may block until completion.
+#' Comments and calling code should not describe this step as asynchronous
+#' unless it is explicitly moved to a background job or promise-based flow.
+#'
+#' @param origins character vector of file paths from the store
+#' @param ns      namespace string ("gov" or "epi")
+#' @return sorted character vector of category labels
+derive_categories_from_store <- function(origins, ns) {
+  switch(ns,
+    gov = derive_gov_categories(origins),
+    epi = derive_epi_categories(origins),
+    "Other"
+  )
+}
+
 # ── Server ────────────────────────────────────────────────────────────────────
 server <- function(input, output, session) {
 
@@ -140,6 +160,9 @@ server <- function(input, output, session) {
       sources        = NULL,
       low_confidence = FALSE
     )
+
+    # Cache for auto-derived categories (populated asynchronously by LLM)
+    categories_cache <- reactiveVal(NULL)
 
     # Store connection
     store <- tryCatch(
@@ -181,6 +204,43 @@ server <- function(input, output, session) {
       tags$div(
         tags$p(paste0(n_docs, " documents indexed")),
         tags$p(paste0(n_chunks, " chunks searchable"))
+      )
+    })
+
+    # ── Document themes ────────────────────────────────────────────────────────
+    # Derived by pattern-matching the actual filenames in the store.
+    # Updates automatically when new files are indexed and the store rebuilt.
+    observe({
+      if (!is.null(categories_cache())) return()
+      if (is.null(meta_con)) return()
+      origins <- tryCatch(
+        DBI::dbGetQuery(
+          meta_con,
+          "SELECT DISTINCT origin FROM chunks WHERE origin IS NOT NULL"
+        )$origin,
+        error = function(e) character(0)
+      )
+      if (length(origins) == 0) return()
+      categories_cache(derive_categories_from_store(origins, ns))
+    })
+
+    output[[paste0(ns, "_categories")]] <- renderUI({
+      cats <- categories_cache()
+      if (is.null(cats)) {
+        return(tags$p(style = "color:#888; font-style:italic;", "Deriving themes..."))
+      }
+      tags$div(
+        lapply(cats, function(cat) {
+          tags$div(
+            style = paste(
+              "display:inline-block; margin:2px 2px 4px 0;",
+              "padding:3px 10px; border-radius:12px;",
+              "background:#E6F4F1; color:#1A7A6E;",
+              "font-size:13px; font-weight:500;"
+            ),
+            cat
+          )
+        })
       )
     })
 
@@ -280,7 +340,7 @@ server <- function(input, output, session) {
       }
       warning_div <- if (isTRUE(state$low_confidence)) {
         tags$div(
-          style = "color:#D4860B; font-weight:bold; margin-bottom:10px;",
+          style = "color:#d4351c; font-weight:bold; margin-bottom:10px;",
           "\u26A0 Low confidence \u2014 retrieved context may not directly address this question."
         )
       } else NULL
@@ -289,9 +349,9 @@ server <- function(input, output, session) {
         warning_div,
         tags$div(
           style = paste(
-            "background:#E6F4F1; padding:14px;",
-            "border-left:5px solid #1A7A6E;",
-            "border-radius:4px;",
+            "background:#f3f2f1; padding:14px;",
+            "border-left:5px solid #1d70b8;",
+            "border-radius:0;",
             "font-size:15px; line-height:1.6;"
           ),
           HTML(commonmark::markdown_html(state$answer))
