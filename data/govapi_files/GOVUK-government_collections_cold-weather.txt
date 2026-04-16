@@ -1,0 +1,9 @@
+---
+source: GOV.UK
+url: https://www.gov.uk/government/collections/cold-weather
+title: Cold weather
+document_type: document_collection
+fetched: 2026-04-16 14:11:49.376319
+---
+
+# Cold weather Cold weather presents a number of risks to health. Information and guidance has been produced to help professionals and the public understand the risks and take action to protect health.
