@@ -33,20 +33,53 @@ call_llm <- function(prompt) {
   llm_model <- Sys.getenv("LLM_MODEL")
   gpt_token <- Sys.getenv("GPT_TOKEN")
 
-  resp <- httr2::request(paste0(llm_url, "/v1/completions")) |>
-    httr2::req_headers(
-      Authorization = paste("Bearer", gpt_token)
-    ) |>
-    httr2::req_body_json(list(
-      model       = llm_model,
-      prompt      = prompt,
-      max_tokens  = 300L,
-      temperature = 0.1
-    )) |>
-    httr2::req_timeout(40) |>
-    httr2::req_perform()
+  missing_vars <- c(
+    if (!nzchar(llm_url)) "LLM_URL",
+    if (!nzchar(llm_model)) "LLM_MODEL",
+    if (!nzchar(gpt_token)) "GPT_TOKEN"
+  )
 
-  trimws(httr2::resp_body_json(resp)$choices[[1]]$text)
+  if (length(missing_vars) > 0) {
+    stop(
+      "call_llm() requires non-empty environment variables: ",
+      paste(missing_vars, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  tryCatch({
+    resp <- httr2::request(paste0(llm_url, "/v1/completions")) |>
+      httr2::req_headers(
+        Authorization = paste("Bearer", gpt_token)
+      ) |>
+      httr2::req_body_json(list(
+        model       = llm_model,
+        prompt      = prompt,
+        max_tokens  = 300L,
+        temperature = 0.1
+      )) |>
+      httr2::req_timeout(40) |>
+      httr2::req_perform()
+
+    resp_json <- httr2::resp_body_json(resp)
+
+    if (
+      is.null(resp_json$choices) ||
+      length(resp_json$choices) < 1 ||
+      is.null(resp_json$choices[[1]]$text) ||
+      !is.character(resp_json$choices[[1]]$text) ||
+      length(resp_json$choices[[1]]$text) < 1
+    ) {
+      stop(
+        "unexpected LLM response shape: expected choices[[1]]$text",
+        call. = FALSE
+      )
+    }
+
+    trimws(resp_json$choices[[1]]$text)
+  }, error = function(e) {
+    stop("call_llm() failed: ", conditionMessage(e), call. = FALSE)
+  })
 }
 
 #' Strip the internal reasoning prefix from a raw LLM response
