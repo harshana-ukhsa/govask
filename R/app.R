@@ -27,7 +27,8 @@ get_app_dir <- function() {
 APP_DIR <- get_app_dir()
 
 source(file.path(APP_DIR, "ui.R"))
-source(file.path(APP_DIR, "rag_query.R"))
+options(.govask_shiny_mode = TRUE)
+source(here::here("ref_code", "rag_query.R"))
 
 # Load credentials from .Renviron (LLM_URL, LLM_MODEL, GPT_TOKEN)
 readRenviron(here::here(".Renviron"))
