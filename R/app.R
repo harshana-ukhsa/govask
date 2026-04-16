@@ -8,8 +8,6 @@ library(here)
 library(duckdb)
 library(commonmark)
 
-`%||%` <- function(x, y) if (!is.null(x)) x else y
-
 get_app_dir <- function() {
   file_arg_prefix <- "--file="
   args <- commandArgs(trailingOnly = FALSE)
