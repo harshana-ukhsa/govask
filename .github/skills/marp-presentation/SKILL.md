@@ -1,4 +1,4 @@
-# Skill: Marp Presentation for GovRAG
+# Skill: Marp Presentation for GovASK
 
 ## When to use this skill
 
@@ -168,7 +168,7 @@ Slide 8  — Team + links
 ---
 <!-- _class: cover -->
 
-# GovRAG
+# GovASK
 ## Government Document Intelligence
 
 AI Engineering Lab Hackathon 2026
