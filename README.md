@@ -1,7 +1,7 @@
 # 🏛️ GovASK — Government Document Intelligence
 
 > **AI Engineering Lab Hackathon 2026 · Challenge 2: Unlocking the Dark Data**  
-> Team: Harshana · Emma · Freddie · UKHSA Public Health Data Science
+> Team: Harshana · Emma · Freddie · UKHSA Epidemiology Data Science
 
 ---
 
@@ -12,6 +12,9 @@ A government frontline adviser is on a call. They need the right guidance — qu
 It may not be the right one.
 
 This is not a failure of effort. It is a failure of infrastructure. Government produces an enormous volume of guidance, policy, and procedural documentation. Most of it is published. Very little of it is genuinely findable under time pressure — and almost none of it is queryable by a machine.
+
+<img src="docs/problem.png" alt="Problem" width="800">
+
 
 ---
 
@@ -27,24 +30,12 @@ A **Retrieval-Augmented Generation (RAG)** document intelligence system that:
 
 A user types a question. They get an answer. They can see exactly which document it came from and verify it in seconds.
 
+<img src="docs/architecture.png" alt="GovAsk RAG pipeline architecture" width="800">
+
 ---
 
 ## Example output
-
-> 📌 *Updated with real output from the challenge-2 corpus on the day.*
-
-```
-Question: What are the eligibility criteria for housing support?
-
-Answer: According to housing_eligibility_guidance.md — applicants must meet
-two of the following three criteria: household income below £35,000, current
-tenancy notice served, or dependent children under 16 in the household.
-
-Sources retrieved:
-  housing_eligibility_guidance.md    BM25: 3.42   [excerpt...]
-  benefits_overview_2024.md          BM25: 2.17   [excerpt...]
-  small_business_support_policy.pdf  BM25: 0.89   [excerpt...]
-```
+<img src="docs/screen.png" alt="GovAsk Screenshot" width="800">
 
 ---
 
