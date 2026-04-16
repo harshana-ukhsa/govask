@@ -71,12 +71,17 @@ if (nchar(gpt_token) == 0 || gpt_token == "your_token_here") {
 
 STORE_PATH <- here::here("data", "rag_store.duckdb")
 
-if (!file.exists(STORE_PATH)) {
-  stop("Store not found at '", STORE_PATH, "'. Run rag_setup.R first.")
-}
+# Guard: skip CLI-only setup when this file is sourced by the Shiny app.
+if (!isTRUE(getOption(".govask_shiny_mode"))) {
 
-store <- ragnar_store_connect(STORE_PATH, read_only = TRUE)
-message("Store connected: ", STORE_PATH)
+  if (!file.exists(STORE_PATH)) {
+    stop("Store not found at '", STORE_PATH, "'. Run rag_setup.R first.")
+  }
+
+  store <- ragnar_store_connect(STORE_PATH, read_only = TRUE)
+  message("Store connected: ", STORE_PATH)
+
+} # end store connection guard
 
 # =============================================================================
 # STEP 3: Define the RAG prompt builder
@@ -231,6 +236,8 @@ parse_answer <- function(raw) {
 #   4. Wraps the LLM call in tryCatch() so a failed API call doesn't crash
 #      the session — the user gets an informative error and can try again
 
+if (!isTRUE(getOption(".govask_shiny_mode"))) {
+
 message("\nRAG demo ready. Type 'exit' to quit.\n")
 
 repeat {
@@ -299,3 +306,5 @@ repeat {
   message("Answer:\n")
   message(answer, "\n")
 }
+
+} # end if (!isTRUE(getOption(".govask_shiny_mode")))
