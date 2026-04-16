@@ -36,7 +36,7 @@ EpiAsk demonstrates how the same pipeline can be pointed at any internal documen
 
 ---
 
-## Example output
+## GovASK Screenshot
 
 <img src="docs/screen.png" alt="GovAsk screenshot" width="800">
 
