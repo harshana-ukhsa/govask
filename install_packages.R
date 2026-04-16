@@ -8,6 +8,7 @@ pkgs <- c(
   "bslib",
   "DT",
   "shinycssloaders",
+  "shinyjs",
 
   # RAG pipeline
   "ragnar",
