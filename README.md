@@ -1,4 +1,4 @@
-# 🏛️ GovRAG — Government Document Intelligence
+# 🏛️ GovASK — Government Document Intelligence
 
 > **AI Engineering Lab Hackathon 2026 · Challenge 2: Unlocking the Dark Data**  
 > Team: Harshana · Emma · Freddie · UKHSA Public Health Data Science
