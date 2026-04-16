@@ -41,6 +41,7 @@ EpiAsk demonstrates how the same pipeline can be pointed at any internal documen
 ---
 ## Architecture
 <img src="docs/architecture.png" alt="GovAsk architecture" width="800">
+
 ---
 
 ## Key strengths
