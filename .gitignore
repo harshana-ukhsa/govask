@@ -1,0 +1,17 @@
+# Secrets - never commit
+.Renviron
+.env
+
+# Generated DuckDB store - large binary, rebuild with rag_setup.R
+data/*.duckdb
+data/*.duckdb.wal
+
+# R/RStudio artefacts
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# renv package cache
+renv/library/
+renv/staging/
