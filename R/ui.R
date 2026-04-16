@@ -139,6 +139,7 @@ rag_tab_panel <- function(
   tab_title,
   full_title,
   ns,                  # namespace prefix string, e.g. "gov" or "epi"
+  description = NULL,  # optional 2-3 sentence description of the service
   question_placeholder = "e.g. What is the eligibility threshold for housing support?"
 ) {
   bslib::nav_panel(
@@ -161,6 +162,14 @@ rag_tab_panel <- function(
         width = 9,
         h3(full_title),
         hr(),
+        
+        # ── Service description ────────────────────────────────────────────
+        if (!is.null(description)) {
+          tags$p(
+            style = "font-size: 16px; color: #505a5f; margin-bottom: 20px; line-height: 1.5;",
+            description
+          )
+        },
 
         # ── Question input ─────────────────────────────────────────────────
         textAreaInput(
@@ -230,6 +239,7 @@ ui <- bslib::page_navbar(
     tab_title            = "GovAsk",
     full_title           = "GovAsk \u2014 Government Document Intelligence",
     ns                   = "gov",
+    description          = "Search and query government guidance documents using natural language. This service retrieves relevant content from indexed policy documents and generates answers grounded in official sources. All responses include citations to the original documents.",
     question_placeholder = "e.g. What is the eligibility threshold for housing support?"
   ),
 
@@ -237,6 +247,7 @@ ui <- bslib::page_navbar(
     tab_title            = "EpiAsk",
     full_title           = "EpiAsk \u2014 EpiDS Document Intelligence",
     ns                   = "epi",
+    description          = "Query epidemiological and public health documents from the EpiDS collection. This service helps you find information from surveillance reports, methodological guidance, and analytical outputs. Answers are generated from indexed documents with full source attribution.",
     question_placeholder = "e.g. What are the methods used in the latest EpiDS report?"
   ),
 
@@ -270,6 +281,10 @@ ui <- bslib::page_navbar(
         width = 9,
         h3("APIAsk \u2014 GOV.UK API Document Intelligence (UKHSA)"),
         hr(),
+        tags$p(
+          style = "font-size: 16px; color: #505a5f; margin-bottom: 20px; line-height: 1.5;",
+          "Access UK Health Security Agency guidance documents fetched directly from the GOV.UK API. This service automatically retrieves and indexes the latest UKHSA health protection guidance, enabling you to query official public health content. Documents are refreshed each time the application starts."
+        ),
         textAreaInput(
           inputId     = "api_question",
           label       = "Ask a question about the indexed documents:",
