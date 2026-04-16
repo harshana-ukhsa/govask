@@ -3,96 +3,155 @@ marp: true
 theme: default
 paginate: true
 style: |
+  /* ── GOV.UK Design System theme ─────────────────────────────────────── */
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap');
+
   :root {
-    --color-background: #FFFFFF;
-    --color-foreground: #1A1A1A;
-    --color-highlight: #1A7A6E;
-    --color-dimmed: #4A5568;
+    --govuk-black:        #0b0c0c;
+    --govuk-blue:         #1d70b8;
+    --govuk-green:        #00703c;
+    --govuk-yellow:       #ffdd00;
+    --govuk-red:          #d4351c;
+    --govuk-light-grey:   #f3f2f1;
+    --govuk-mid-grey:     #b1b4b6;
+    --govuk-dark-grey:    #505a5f;
+    --govuk-white:        #ffffff;
   }
+
   section {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    font-size: 28px;
-    color: #1A1A1A;
-    background: #FFFFFF;
-    padding: 48px 64px;
+    font-family: "GDS Transport", "Noto Sans", Arial, sans-serif;
+    font-size: 26px;
+    color: var(--govuk-black);
+    background: var(--govuk-white);
+    padding: 48px 64px 48px 64px;
+    border-top: 10px solid var(--govuk-black);
   }
+
   section h1 {
-    color: #1A7A6E;
-    font-size: 44px;
-    border-bottom: 3px solid #1A7A6E;
-    padding-bottom: 12px;
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--govuk-black);
+    border-bottom: 4px solid var(--govuk-blue);
+    padding-bottom: 10px;
     margin-bottom: 24px;
+    line-height: 1.1;
   }
+
   section h2 {
-    color: #1A1A1A;
-    font-size: 36px;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--govuk-black);
   }
+
+  section h3 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--govuk-blue);
+  }
+
+  /* Cover slide — GOV.UK black top bar style */
   section.cover {
-    background: #0E5C52;
-    color: #FFFFFF;
-    justify-content: center;
-    text-align: center;
+    background: var(--govuk-black);
+    color: var(--govuk-white);
+    justify-content: flex-start;
+    text-align: left;
+    border-top: none;
+    padding: 56px 64px;
   }
   section.cover h1 {
-    color: #FFFFFF;
-    border-bottom: 2px solid rgba(255,255,255,0.3);
+    color: var(--govuk-white);
+    border-bottom: 4px solid var(--govuk-blue);
     font-size: 52px;
+    margin-bottom: 12px;
+  }
+  section.cover h2 {
+    color: var(--govuk-yellow);
+    font-size: 30px;
+    font-weight: 400;
+    margin-bottom: 32px;
   }
   section.cover p {
-    color: rgba(255,255,255,0.85);
-    font-size: 24px;
+    color: #c8c8c8;
+    font-size: 22px;
+    line-height: 1.5;
   }
+
+  /* Section divider */
   section.section-divider {
-    background: #1A7A6E;
-    color: #FFFFFF;
+    background: var(--govuk-blue);
+    color: var(--govuk-white);
     justify-content: center;
-    text-align: center;
+    text-align: left;
+    border-top: none;
   }
   section.section-divider h1 {
-    color: #FFFFFF;
-    border-bottom: none;
+    color: var(--govuk-white);
+    border-bottom: 3px solid rgba(255,255,255,0.4);
     font-size: 48px;
   }
+
+  /* Tables */
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 22px;
+    font-size: 21px;
   }
   th {
-    background: #1A7A6E;
-    color: #FFFFFF;
+    background: var(--govuk-blue);
+    color: var(--govuk-white);
     padding: 10px 14px;
     text-align: left;
+    font-weight: 700;
   }
   td {
     padding: 8px 14px;
-    border-bottom: 1px solid #E2E8F0;
+    border-bottom: 1px solid var(--govuk-mid-grey);
   }
   tr:nth-child(even) td {
-    background: #F0FAF8;
+    background: var(--govuk-light-grey);
   }
+
+  /* Code */
   code {
-    background: #F2F2F2;
-    color: #0E5C52;
+    background: var(--govuk-light-grey);
+    color: var(--govuk-black);
     padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 24px;
+    border-radius: 0;
+    font-size: 22px;
+    font-family: monospace;
   }
+  pre {
+    background: var(--govuk-light-grey);
+    border-left: 4px solid var(--govuk-blue);
+    padding: 14px 18px;
+    font-size: 20px;
+  }
+
+  /* Blockquote — GOV.UK inset text style */
   blockquote {
-    border-left: 4px solid #1A7A6E;
-    background: #E6F4F1;
+    border-left: 10px solid var(--govuk-mid-grey);
+    background: var(--govuk-light-grey);
     padding: 12px 20px;
     margin: 16px 0;
-    color: #1A1A1A;
+    color: var(--govuk-black);
     font-style: normal;
   }
-  .amber {
-    color: #D4860B;
+
+  /* Warning tag */
+  .warning {
+    color: var(--govuk-red);
     font-weight: bold;
   }
+
+  /* Page number */
+  section::after {
+    color: var(--govuk-dark-grey);
+    font-size: 18px;
+  }
+
   footer {
     font-size: 18px;
-    color: #4A5568;
+    color: var(--govuk-dark-grey);
   }
 ---
 
