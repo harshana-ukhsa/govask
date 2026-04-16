@@ -35,21 +35,7 @@ A user types a question. They get an answer. They can see exactly which document
 ---
 
 ## Example output
-
-> 📌 *Updated with real output from the challenge-2 corpus on the day.*
-
-```
-Question: What are the eligibility criteria for housing support?
-
-Answer: According to housing_eligibility_guidance.md — applicants must meet
-two of the following three criteria: household income below £35,000, current
-tenancy notice served, or dependent children under 16 in the household.
-
-Sources retrieved:
-  housing_eligibility_guidance.md    BM25: 3.42   [excerpt...]
-  benefits_overview_2024.md          BM25: 2.17   [excerpt...]
-  small_business_support_policy.pdf  BM25: 0.89   [excerpt...]
-```
+<img src="docs/screen.png" alt="GovAsk RAG pipeline architecture" width="800">
 
 ---
 
