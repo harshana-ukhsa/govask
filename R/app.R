@@ -28,11 +28,40 @@ APP_DIR <- get_app_dir()
 
 source(file.path(APP_DIR, "ui.R"))
 options(.govask_shiny_mode = TRUE)
-source(here::here("ref_code", "rag_query.R"))
 
 # Load credentials from .Renviron (LLM_URL, LLM_MODEL, GPT_TOKEN)
+# before loading any helper code that may read them at source-time.
 readRenviron(here::here(".Renviron"))
 
+# Load reusable RAG helpers into an app-scoped environment so that
+# CLI-oriented top-level code does not pollute the Shiny app environment.
+rag_query_env <- new.env(parent = globalenv())
+rag_query_error <- tryCatch(
+  {
+    sys.source(here::here("ref_code", "rag_query.R"), envir = rag_query_env)
+    NULL
+  },
+  error = function(e) {
+    e
+  }
+)
+
+if (length(ls(rag_query_env, all.names = TRUE)) > 0) {
+  list2env(
+    mget(ls(rag_query_env, all.names = TRUE), envir = rag_query_env),
+    envir = environment()
+  )
+}
+
+if (inherits(rag_query_error, "error") &&
+    length(ls(rag_query_env, all.names = TRUE)) == 0) {
+  stop(
+    paste(
+      "Failed to load RAG query helpers for the Shiny app:",
+      conditionMessage(rag_query_error)
+    )
+  )
+}
 # ── Constants ─────────────────────────────────────────────────────────────────
 STORE_PATH     <- here::here("data", "rag_store.duckdb")
 EPI_STORE_PATH <- here::here("data", "epids_store.duckdb")
