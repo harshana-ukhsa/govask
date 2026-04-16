@@ -1,7 +1,7 @@
 # 🏛️ GovASK — Government Document Intelligence
 
 > **AI Engineering Lab Hackathon 2026 · Challenge 2: Unlocking the Dark Data**  
-> Team: Harshana · Emma · Freddie · UKHSA Public Health Data Science
+> Team: Harshana · Emma · Freddie · UKHSA Epidemiology Data Science
 
 ---
 
@@ -26,6 +26,8 @@ A **Retrieval-Augmented Generation (RAG)** document intelligence system that:
 - Surfaces all of this through a **browser-based Shiny interface** — no installation required for end users
 
 A user types a question. They get an answer. They can see exactly which document it came from and verify it in seconds.
+
+<img src="docs/architecture.png" alt="GovAsk RAG pipeline architecture" width="600">
 
 ---
 
