@@ -2,6 +2,7 @@ library(shiny)
 library(bslib)
 library(DT)
 library(shinycssloaders)
+library(shinyjs)
 library(ragnar)
 library(httr2)
 library(here)
@@ -381,9 +382,101 @@ server <- function(input, output, session) {
     })
   }
 
-  # ── Instantiate all tabs ─────────────────────────────────────────────────────
+  # ── Instantiate GovAsk and EpiAsk tabs ───────────────────────────────────────
   rag_server("gov", STORE_PATH)
   rag_server("epi", EPI_STORE_PATH)
+  
+  # ── APIAsk: Custom fetch handler + RAG server ────────────────────────────────
+  # Fetch status output
+  output$api_fetch_status <- renderUI({
+    NULL  # Will be updated by observeEvent
+  })
+  
+  # Handle "Fetch Documents" button click
+  observeEvent(input$api_fetch_docs, {
+    # Get user inputs
+    search_terms <- trimws(input$api_search_terms)
+    filter_org   <- input$api_filter_org
+    doc_count    <- input$api_doc_count
+    
+    # Validate
+    if (nchar(search_terms) == 0) {
+      showNotification("Please enter search terms", type = "warning")
+      return()
+    }
+    
+    # Show progress
+    showNotification("Fetching documents from GOV.UK API...", id = "api_fetch_progress", duration = NULL, type = "message")
+    
+    tryCatch({
+      # Clear existing files
+      existing_files <- list.files(here::here("data", "govapi_files"), full.names = TRUE)
+      if (length(existing_files) > 0) {
+        file.remove(existing_files)
+      }
+      
+      # Load API functions
+      govuk_env <- new.env(parent = globalenv())
+      source(here::here("ref_code", "govuk_api.R"), local = govuk_env)
+      
+      # Download documents
+      filter_org_value <- if (nchar(filter_org) == 0) NULL else filter_org
+      
+      saved_files <- govuk_env$download_govuk_documents(
+        query              = search_terms,
+        count              = doc_count,
+        output_dir         = here::here("data", "govapi_files"),
+        filter_organisations = filter_org_value,
+        file_format        = "txt",
+        delay              = 0.15
+      )
+      
+      removeNotification("api_fetch_progress")
+      
+      if (length(saved_files) == 0) {
+        showNotification("No documents found matching your query", type = "warning", duration = 5)
+        return()
+      }
+      
+      # Rebuild the store
+      showNotification("Building search index...", id = "api_index_progress", duration = NULL, type = "message")
+      
+      source(here::here("ref_code", "api_setup.R"), local = new.env())
+      
+      removeNotification("api_index_progress")
+      
+      showNotification(
+        paste0("Successfully indexed ", length(saved_files), " documents. Refreshing app..."),
+        type = "message",
+        duration = 2
+      )
+      
+      # Save current tab and input values to sessionStorage, then reload
+      shinyjs::delay(1500, {
+        shinyjs::runjs(sprintf(
+          "sessionStorage.setItem('govask_active_tab', 'APIAsk');
+           sessionStorage.setItem('govask_api_search_terms', '%s');
+           sessionStorage.setItem('govask_api_filter_org', '%s');
+           sessionStorage.setItem('govask_api_doc_count', '%s');
+           window.location.reload();",
+          gsub("'", "\\\\'", search_terms),
+          filter_org,
+          doc_count
+        ))
+      })
+      
+    }, error = function(e) {
+      removeNotification("api_fetch_progress")
+      removeNotification("api_index_progress")
+      showNotification(
+        paste0("Error: ", conditionMessage(e)),
+        type = "error",
+        duration = 10
+      )
+    })
+  })
+  
+  # APIAsk RAG server (uses reactive store connection)
   rag_server("api", API_STORE_PATH)
 }
 

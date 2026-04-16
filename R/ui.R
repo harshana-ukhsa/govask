@@ -2,6 +2,7 @@ library(shiny)
 library(bslib)
 library(DT)
 library(shinycssloaders)
+library(shinyjs)
 
 # ── GOV.UK Design System colours ──────────────────────────────────────────────
 GOVUK_BLACK  <- "#0b0c0c"
@@ -125,6 +126,48 @@ govuk_css <- tags$style(HTML("
   .dataTables_wrapper { font-size: 14px; }
 "))
 
+# ── JavaScript for tab and input persistence after reload ─────────────────────
+tab_persistence_js <- tags$script(HTML("
+  $(document).ready(function() {
+    // On page load, check if we need to switch to a specific tab
+    var savedTab = sessionStorage.getItem('govask_active_tab');
+    if (savedTab) {
+      sessionStorage.removeItem('govask_active_tab');
+      // Use Bootstrap 5 tab API to activate the saved tab
+      var tabLink = document.querySelector('a.nav-link[data-value=\"' + savedTab + '\"]');
+      if (tabLink) {
+        var tab = new bootstrap.Tab(tabLink);
+        tab.show();
+      }
+    }
+    
+    // Restore APIAsk inputs if saved
+    var savedSearchTerms = sessionStorage.getItem('govask_api_search_terms');
+    var savedFilterOrg = sessionStorage.getItem('govask_api_filter_org');
+    var savedDocCount = sessionStorage.getItem('govask_api_doc_count');
+    
+    if (savedSearchTerms !== null) {
+      $('#api_search_terms').val(savedSearchTerms);
+      sessionStorage.removeItem('govask_api_search_terms');
+    }
+    
+    if (savedFilterOrg !== null) {
+      $('#api_filter_org').val(savedFilterOrg);
+      sessionStorage.removeItem('govask_api_filter_org');
+    }
+    
+    if (savedDocCount !== null) {
+      // Update slider value - Shiny sliders use a specific structure
+      var slider = $('#api_doc_count');
+      if (slider.length) {
+        // For Shiny sliderInput, we need to update via Shiny's input binding
+        Shiny.setInputValue('api_doc_count', parseInt(savedDocCount));
+      }
+      sessionStorage.removeItem('govask_api_doc_count');
+    }
+  });
+"))
+
 # ── BETA phase banner ─────────────────────────────────────────────────────────
 govuk_beta_banner <- tags$div(
   class = "govuk-phase-banner",
@@ -211,6 +254,7 @@ rag_tab_panel <- function(
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 ui <- bslib::page_navbar(
+  id = "main_nav",
   title = HTML(paste0(
     '<span style="font-weight:700;font-size:20px;color:#fff;',
     'font-family:\'GDS Transport\',Arial,sans-serif;">GOV.UK</span>',
@@ -233,7 +277,7 @@ ui <- bslib::page_navbar(
     "font-family-sans-serif" = "'GDS Transport', Arial, sans-serif"
   ),
   fluid  = TRUE,
-  header = govuk_css,
+  header = tagList(shinyjs::useShinyjs(), govuk_css, tab_persistence_js),
 
   rag_tab_panel(
     tab_title            = "GovAsk",
@@ -258,32 +302,82 @@ ui <- bslib::page_navbar(
     sidebarLayout(
       sidebarPanel(
         width = 3,
+        h5("GOV.UK API Query"),
+        tags$p(
+          style = "font-size: 12px; color: #505a5f; margin-bottom: 10px;",
+          "Configure the GOV.UK API search parameters below, then click 'Fetch Documents' to download and index content."
+        ),
+        
+        # Search terms input
+        textInput(
+          inputId     = "api_search_terms",
+          label       = "Search terms:",
+          value       = "health protection guidance",
+          placeholder = "e.g. infection control, vaccination"
+        ),
+        
+        # Organisation filter dropdown
+        selectInput(
+          inputId  = "api_filter_org",
+          label    = "Filter by organisation:",
+          choices  = c(
+            "No filter (all organisations)" = "",
+            "UK Health Security Agency" = "uk-health-security-agency",
+            "Department of Health and Social Care" = "department-of-health-and-social-care",
+            "NHS England" = "nhs-england",
+            "Public Health Wales" = "public-health-wales",
+            "Public Health Scotland" = "public-health-scotland",
+            "Health and Safety Executive" = "health-and-safety-executive",
+            "Food Standards Agency" = "food-standards-agency",
+            "Medicines and Healthcare products Regulatory Agency" = "medicines-and-healthcare-products-regulatory-agency",
+            "Office for Health Improvement and Disparities" = "office-for-health-improvement-and-disparities",
+            "Care Quality Commission" = "care-quality-commission",
+            "National Institute for Health and Care Excellence" = "national-institute-for-health-and-care-excellence",
+            "Health Education England" = "health-education-england",
+            "NHS Digital" = "nhs-digital",
+            "Office for National Statistics" = "office-for-national-statistics",
+            "Home Office" = "home-office",
+            "Department for Environment, Food & Rural Affairs" = "department-for-environment-food-rural-affairs",
+            "Cabinet Office" = "cabinet-office"
+          ),
+          selected = ""
+        ),
+        
+        # Number of documents
+        sliderInput(
+          inputId = "api_doc_count",
+          label   = "Number of documents:",
+          min     = 5,
+          max     = 50,
+          value   = 20,
+          step    = 5
+        ),
+        
+        # Fetch button
+        actionButton(
+          "api_fetch_docs", 
+          "Fetch Documents", 
+          class = "btn-primary",
+          style = "width: 100%; margin-top: 10px;"
+        ),
+        
+        # Status message
+        uiOutput("api_fetch_status"),
+        
+        hr(),
         h5("Document corpus"),
         uiOutput("api_corpus_summary"),
         hr(),
         h5("Filter by file type"),
-        uiOutput("api_type_filter"),
-        hr(),
-        h5("GOV.UK API Query"),
-        tags$div(
-          style = "font-size: 12px; background: #f5f5f5; padding: 10px; border-radius: 4px;",
-          tags$p(tags$strong("Query:"), " health protection guidance"),
-          tags$p(tags$strong("Filter:"), " uk-health-security-agency"),
-          tags$p(tags$strong("Count:"), " 20 documents"),
-          tags$p(
-            tags$strong("Endpoint:"), 
-            tags$br(),
-            tags$code("gov.uk/api/search.json", style = "font-size: 11px;")
-          )
-        )
+        uiOutput("api_type_filter")
       ),
       mainPanel(
         width = 9,
-        h3("APIAsk \u2014 GOV.UK API Document Intelligence (UKHSA)"),
+        h3("APIAsk \u2014 GOV.UK API Document Intelligence"),
         hr(),
         tags$p(
           style = "font-size: 16px; color: #505a5f; margin-bottom: 20px; line-height: 1.5;",
-          "Access UK Health Security Agency guidance documents fetched directly from the GOV.UK API. This service automatically retrieves and indexes the latest UKHSA health protection guidance, enabling you to query official public health content. Documents are refreshed each time the application starts."
+          "Access government guidance documents fetched directly from the GOV.UK API. Configure your search in the sidebar to retrieve documents from any government organisation. Documents are indexed for natural language querying with full source attribution."
         ),
         textAreaInput(
           inputId     = "api_question",
