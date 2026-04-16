@@ -96,22 +96,40 @@ message("Store connected: ", STORE_PATH)
 #   chunks_tbl — a tibble returned by ragnar_retrieve_bm25(), with a `text`
 #                column containing the retrieved chunk content
 
-build_rag_prompt <- function(question, chunks_tbl) {
-  # Join all retrieved chunks into one context block.
-  # Separating chunks with "\n\n" helps the LLM treat them as distinct passages.
-  context <- paste(chunks_tbl$text, collapse = "\n\n")
+build_rag_prompt <- function(question, chunks_tbl, low_confidence = FALSE) {
+  # Label each chunk with its source filename so the LLM can cite it.
+  context_blocks <- mapply(function(text, origin) {
+    paste0("--- Source: ", basename(origin), " ---\n", text)
+  }, chunks_tbl$text, chunks_tbl$origin, SIMPLIFY = FALSE)
 
-  # The prompt instructs the LLM to use ONLY the provided context.
-  # This is the core RAG constraint — without it, the LLM may draw on its
-  # training data and produce answers that aren't in your documents.
+  context <- paste(context_blocks, collapse = "\n\n")
+
+  # Prepend a warning if BM25 scores are weak
+  confidence_note <- if (low_confidence) {
+    paste0(
+      "Note: the retrieved context may not directly address this question. ",
+      "Answer only what the context supports.\n\n"
+    )
+  } else ""
+
   paste0(
-    "Answer the question using only the information in the context.\n",
-    "Keep your answer short and helpful.\n",
-    "Do not explain how you got the answer.\n",
-    "Do not mention the context.\n",
-    "If the answer is not in the context, say: ",
-    "\"I cannot answer this from the provided documents.\"\n\n",
-    "Context:\n", context, "\n\n",
+    # --- Grounding ---
+    "Answer the question using ONLY the information in the context below.\n",
+    "Do not use any knowledge from outside the provided context.\n",
+    # --- Citation ---
+    "Begin your answer with: 'According to [document name]...' ",
+    "where [document name] is the filename of the most relevant source.\n",
+    # --- Fallback ---
+    "If the answer is not in the context, say exactly: ",
+    "'I cannot answer this from the provided documents.'\n",
+    # --- Style ---
+    "Keep your answer to 3 sentences or fewer unless a list is more appropriate.\n",
+    "Do not mention the context, passages, or how you found the answer.\n\n",
+    # --- Confidence note (conditional) ---
+    confidence_note,
+    # --- Context ---
+    "Context:\n\n", context, "\n\n",
+    # --- Question ---
     "Question: ", question, "\n\n",
     "Answer:"
   )
@@ -189,14 +207,18 @@ call_llm <- function(prompt) {
 # If the marker is absent (e.g. a different model is used), we fall back to
 # returning the last non-empty line of the response.
 parse_answer <- function(raw) {
-  marker <- "assistantfinal"
-  if (grepl(marker, raw, fixed = TRUE)) {
-    trimws(strsplit(raw, marker, fixed = TRUE)[[1]][2])
-  } else {
-    lines <- trimws(strsplit(trimws(raw), "\n")[[1]])
-    lines <- lines[nchar(lines) > 0]
-    if (length(lines) > 0) lines[length(lines)] else trimws(raw)
+  # 1. Strip "assistantfinal" reasoning prefix if present
+  if (grepl("assistantfinal", raw, fixed = TRUE)) {
+    raw <- trimws(strsplit(raw, "assistantfinal", fixed = TRUE)[[1]][2])
   }
+
+  # 2. Strip "Answer:" marker if the remaining text starts with it
+  if (grepl("^\\s*Answer:", raw)) {
+    raw <- trimws(sub("^\\s*Answer:\\s*", "", raw))
+  }
+
+  # 3. Return whatever is left, trimmed
+  trimws(raw)
 }
 
 # =============================================================================
@@ -243,9 +265,17 @@ repeat {
   }
 
   # ---------------------------------------------------------------------------
+  # CONFIDENCE CHECK: flag weak BM25 retrieval
+  # ---------------------------------------------------------------------------
+  LOW_CONFIDENCE_THRESHOLD <- 1.0
+
+  is_low_confidence <- max(top_chunks$metric_value, na.rm = TRUE) <
+    LOW_CONFIDENCE_THRESHOLD
+
+  # ---------------------------------------------------------------------------
   # AUGMENT: build the grounded prompt
   # ---------------------------------------------------------------------------
-  prompt <- build_rag_prompt(question, top_chunks)
+  prompt <- build_rag_prompt(question, top_chunks, low_confidence = is_low_confidence)
 
   message("\nAsking LLM...\n")
 
