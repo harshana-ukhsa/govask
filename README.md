@@ -13,7 +13,7 @@ It may not be the right one.
 
 This is not a failure of effort. It is a failure of infrastructure. Government produces an enormous volume of guidance, policy, and procedural documentation. Most of it is published. Very little of it is genuinely findable under time pressure — and almost none of it is queryable by a machine.
 
-<img src="docs/problem.png" alt="Problem" width="600">
+<img src="docs/problem.png" alt="Problem" width="800">
 
 
 ---
