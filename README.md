@@ -30,7 +30,7 @@ A **Retrieval-Augmented Generation (RAG)** document intelligence system that:
 
 A user types a question. They get an answer. They can see exactly which document it came from and verify it in seconds.
 
-<img src="docs/architecture.png" alt="GovAsk RAG pipeline architecture" width="600">
+<img src="docs/architecture.png" alt="GovAsk RAG pipeline architecture" width="800">
 
 ---
 
