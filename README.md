@@ -31,6 +31,7 @@ On every app startup, APIAsk automatically fetches current UKHSA guidance direct
 
 ### EpiAsk — Internal knowledge base (extensibility demonstration)
 EpiAsk demonstrates how the same pipeline can be pointed at any internal document collection. In our team's context, we intend to use this pattern to interrogate our **UKHSA Confluence documentation base** — SOPs, technical guides, and data standards — giving epidemiologists and data scientists instant answers from institutional knowledge that currently lives only in wikis and shared drives.
+
 ---
 
 ## GovASK Screenshot
