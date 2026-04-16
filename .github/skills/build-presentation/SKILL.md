@@ -6,7 +6,6 @@ Load this skill when the user says any of the following:
 - "build the presentation"
 - "rebuild the slides"
 - "export the presentation"
-- "update the PDF"
 - "the presentation needs rebuilding"
 - "generate presentation output"
 
@@ -19,7 +18,7 @@ No system install, no npm, no GitHub Actions required.
 ## What this skill does
 
 1. Finds the Marp CLI inside the installed VS Code extension
-2. Exports `presentation.md` to `docs/presentation.pdf` and `docs/presentation.html`
+2. Exports `presentation.md` to `docs/presentation.html`
 3. Stages the output files with git
 4. Commits with a standard message
 
@@ -72,30 +71,7 @@ If this fails, stop and tell the user:
 mkdir -p docs
 ```
 
-### Step 4 — Export to PDF
-
-```sh
-node "$MARP_CLI" presentation.md \
-  --pdf \
-  --output docs/presentation.pdf \
-  --allow-local-files
-```
-
-If this fails with a Chromium/sandbox error, retry with:
-
-```sh
-node "$MARP_CLI" presentation.md \
-  --pdf \
-  --output docs/presentation.pdf \
-  --allow-local-files \
-  --chrome-arg="--no-sandbox" \
-  --chrome-arg="--disable-setuid-sandbox"
-```
-
-If PDF export fails entirely (common on some corporate builds), skip to HTML only
-and tell the user: "PDF export is blocked on this machine — HTML produced instead."
-
-### Step 5 — Export to HTML
+### Step 4 — Export to HTML
 
 ```sh
 node "$MARP_CLI" presentation.md \
@@ -106,16 +82,15 @@ node "$MARP_CLI" presentation.md \
 
 HTML export almost never fails — it does not require Chromium.
 
-### Step 6 — Stage the output files
+### Step 5 — Stage the output files
 
 ```sh
-git add docs/presentation.pdf docs/presentation.html
+git add docs/presentation.html
 ```
 
-Stage whichever files were successfully produced. If neither exists, stop and
-report what went wrong in steps 4 and 5.
+If the file does not exist, stop and report what went wrong in step 4.
 
-### Step 7 — Commit
+### Step 6 — Commit
 
 ```sh
 git commit -m "docs: rebuild presentation from presentation.md"
@@ -124,21 +99,17 @@ git commit -m "docs: rebuild presentation from presentation.md"
 If nothing to commit (outputs unchanged), report:
 > "Presentation is already up to date — no commit needed."
 
-### Step 8 — Report to the user
+### Step 7 — Report to the user
 
 Tell the user what was built and committed:
 
 ```
 ✓ Presentation rebuilt and committed.
 
-  📄 docs/presentation.pdf
   🌐 docs/presentation.html
 
   Commit: docs: rebuild presentation from presentation.md
 ```
-
-If only HTML was produced (PDF blocked), say so clearly so the user knows
-to use the HTML version for the demo.
 
 ---
 

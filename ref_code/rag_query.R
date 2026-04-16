@@ -71,12 +71,82 @@ if (nchar(gpt_token) == 0 || gpt_token == "your_token_here") {
 
 STORE_PATH <- here::here("data", "rag_store.duckdb")
 
-if (!file.exists(STORE_PATH)) {
-  stop("Store not found at '", STORE_PATH, "'. Run rag_setup.R first.")
-}
+# Guard: skip CLI-only setup when this file is sourced by the Shiny app.
+if (!isTRUE(getOption(".govask_shiny_mode"))) {
 
-store <- ragnar_store_connect(STORE_PATH, read_only = TRUE)
-message("Store connected: ", STORE_PATH)
+  if (!file.exists(STORE_PATH)) {
+    stop("Store not found at '", STORE_PATH, "'. Run rag_setup.R first.")
+  }
+
+  store <- ragnar_store_connect(STORE_PATH, read_only = TRUE)
+  message("Store connected: ", STORE_PATH)
+
+} # end store connection guard
+
+# =============================================================================
+# GovAsk: Derive broad policy-area / department categories from filenames
+# =============================================================================
+# Sends document filenames to the LLM and asks for UK government policy areas
+# or department names. The response is requested as a single comma-separated
+# line to prevent chain-of-thought leakage across multiple lines.
+# Falls back to pattern matching if the LLM is unavailable.
+
+#' Derive GovAsk category labels from a vector of origin file paths
+#'
+#' @param origins character vector of file paths (from the DuckDB store)
+#' @return sorted character vector of policy-area / department labels
+derive_gov_categories <- function(origins) {
+  filenames <- paste(sort(basename(origins)), collapse = "\n")
+
+  prompt <- paste0(
+    "Below is a list of UK government document filenames.\n",
+    "Identify the broad policy areas or government departments these documents cover.\n",
+    "Use clear human-readable names like 'Housing Policy', 'Employment Law',\n",
+    "'HR & Workplace Policies', 'Finance & Procurement', 'Data Protection & IT Security',\n",
+    "'Equality & Compliance'.\n",
+    "Return 4-6 categories as a SINGLE comma-separated line with no other text.\n\n",
+    "Documents:\n", filenames, "\n\nCategories:"
+  )
+
+  raw <- tryCatch(call_llm(prompt), error = function(e) NULL)
+
+  if (!is.null(raw)) {
+    answered <- parse_answer(raw)
+    # Take only the first non-empty line (guards against multi-line leakage)
+    first_line <- trimws(strsplit(answered, "\n")[[1]])
+    first_line <- first_line[nchar(first_line) > 0][1]
+    if (!is.na(first_line) && nchar(first_line) > 0) {
+      cats <- trimws(strsplit(first_line, ",")[[1]])
+      cats <- cats[nchar(cats) > 2 & nchar(cats) < 60]
+      cats <- cats[!grepl("\\.pdf|\\.docx|\\.xlsx|\\.html|\\.md|\\.txt", cats)]
+      if (length(cats) > 0) return(sort(cats))
+    }
+  }
+
+  # Pattern-matching fallback
+  message("[GovAsk] LLM category call failed or returned unusable output; using fallback.")
+  rules <- list(
+    list(pattern = "(?i)housing|HB-|homelessness|council.tax|dhp|right.to.buy|social.housing",
+         label   = "Housing Benefit & Support"),
+    list(pattern = "(?i)employment|self.employ|minimum.wage|sick.pay|pension|flexible.work|SB-|workplace",
+         label   = "Employment & Self-Employment"),
+    list(pattern = "(?i)annual.leave|grievance|recruitment|performance|whistleblow|raising.concern|social.media|travel.*subsist",
+         label   = "HR & People Policies"),
+    list(pattern = "(?i)procurement|spending|overpayment|finance|budget",
+         label   = "Finance & Procurement"),
+    list(pattern = "(?i)data.protect|information.security|acceptable.use|incident.report|IT.system",
+         label   = "Data & IT Security"),
+    list(pattern = "(?i)equality|welsh|foi|freedom.of.info|ministers|programme.board|compliance",
+         label   = "Equality, Compliance & Governance")
+  )
+  basenames <- basename(origins)
+  matched <- vapply(rules, function(r) {
+    if (any(grepl(r$pattern, basenames, perl = TRUE))) r$label else NA_character_
+  }, character(1))
+  matched <- matched[!is.na(matched)]
+  if (length(matched) == 0) matched <- "Other"
+  sort(matched)
+}
 
 # =============================================================================
 # STEP 3: Define the RAG prompt builder
@@ -231,6 +301,8 @@ parse_answer <- function(raw) {
 #   4. Wraps the LLM call in tryCatch() so a failed API call doesn't crash
 #      the session — the user gets an informative error and can try again
 
+if (!isTRUE(getOption(".govask_shiny_mode"))) {
+
 message("\nRAG demo ready. Type 'exit' to quit.\n")
 
 repeat {
@@ -299,3 +371,5 @@ repeat {
   message("Answer:\n")
   message(answer, "\n")
 }
+
+} # end if (!isTRUE(getOption(".govask_shiny_mode")))

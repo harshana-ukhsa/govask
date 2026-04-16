@@ -72,30 +72,33 @@ library(here)       # here: reliable path resolution regardless of working direc
 # Where to save the DuckDB store file and where to look for documents
 # Using here::here() ensures paths resolve correctly even if the working
 # directory isn't the project root (e.g. when sourcing from a subdirectory)
-STORE_PATH <- here::here("data", "rag_store.duckdb")
-DATA_DIR   <- here::here("data", "structured_files")
+STORE_PATH       <- here::here("data", "rag_store.duckdb")
+DATA_DIRS        <- c(
+  here::here("data", "structured_files"),
+  here::here("data", "unstructured_files")
+)
 
 # =============================================================================
-# STEP 1: Discover all PDF and DOCX files in the data/ folder
+# STEP 1: Discover all supported files across both data folders
 # =============================================================================
 # list.files() with a regex pattern picks up matching files automatically.
 # This means you never need to hardcode filenames — just drop documents into
-# data/ and re-run this script to include them in the index.
+# either data folder and re-run this script to include them in the index.
 
-pdf_files  <- list.files(DATA_DIR, pattern = "\\.pdf$",
-                         full.names = TRUE, recursive = FALSE)
-docx_files <- list.files(DATA_DIR, pattern = "\\.docx$",
-                         full.names = TRUE, recursive = FALSE)
-html_files <- list.files(DATA_DIR, pattern = "\\.html?$",
-                         full.names = TRUE, recursive = FALSE)
-txt_files  <- list.files(DATA_DIR, pattern = "\\.txt$",
-                         full.names = TRUE, recursive = FALSE)
-md_files   <- list.files(DATA_DIR, pattern = "\\.md$",
-                         full.names = TRUE, recursive = FALSE)
+discover <- function(dirs, pattern) {
+  unlist(lapply(dirs, list.files,
+                pattern = pattern, full.names = TRUE, recursive = FALSE))
+}
+
+pdf_files  <- discover(DATA_DIRS, "\\.pdf$")
+docx_files <- discover(DATA_DIRS, "\\.docx$")
+html_files <- discover(DATA_DIRS, "\\.html?$")
+txt_files  <- discover(DATA_DIRS, "\\.txt$")
+md_files   <- discover(DATA_DIRS, "\\.md$")
 all_files  <- c(pdf_files, docx_files, html_files, txt_files, md_files)
 
 if (length(all_files) == 0) {
-  stop("No supported files found in '", DATA_DIR, "/'.", " Add documents and try again.")
+  stop("No supported files found in data folders. Add documents and try again.")
 }
 
 message("Found ", length(all_files), " document(s) to ingest:")
@@ -237,7 +240,7 @@ if (file.exists(STORE_PATH)) {
 store <- ragnar_store_create(
   location  = STORE_PATH,
   embed     = NULL,
-  overwrite = FALSE
+  overwrite = TRUE
 )
 
 # =============================================================================
