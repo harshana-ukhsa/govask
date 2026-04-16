@@ -131,6 +131,11 @@ TOP_K          <- 5L
 
 #' Dispatch to the correct per-namespace category derivation function
 #'
+#' Note: this derivation is synchronous. If it triggers LLM-backed helpers,
+#' it runs in the current Shiny R process and may block until completion.
+#' Comments and calling code should not describe this step as asynchronous
+#' unless it is explicitly moved to a background job or promise-based flow.
+#'
 #' @param origins character vector of file paths from the store
 #' @param ns      namespace string ("gov" or "epi")
 #' @return sorted character vector of category labels
