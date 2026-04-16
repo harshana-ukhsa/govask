@@ -63,13 +63,17 @@ library(ragnar)   # ragnar: the core RAG toolkit (chunking, DuckDB, BM25)
 library(pdftools) # pdftools: PDF text extraction using libpoppler — pure R,
                   # no Python or internet download required
 library(officer)  # officer: DOCX text extraction — reads Word documents
-library(here)     # here: reliable path resolution regardless of working directory
+library(xml2)       # xml2: HTML/XML parsing
+library(rvest)      # rvest: HTML text extraction
+library(readr)      # readr: TXT and CSV file reading
+library(commonmark) # commonmark: Markdown to plain text stripping
+library(here)       # here: reliable path resolution regardless of working directory
 
 # Where to save the DuckDB store file and where to look for documents
 # Using here::here() ensures paths resolve correctly even if the working
 # directory isn't the project root (e.g. when sourcing from a subdirectory)
 STORE_PATH <- here::here("data", "rag_store.duckdb")
-DATA_DIR   <- here::here("data")
+DATA_DIR   <- here::here("data", "structured_files")
 
 # =============================================================================
 # STEP 1: Discover all PDF and DOCX files in the data/ folder
@@ -82,14 +86,21 @@ pdf_files  <- list.files(DATA_DIR, pattern = "\\.pdf$",
                          full.names = TRUE, recursive = FALSE)
 docx_files <- list.files(DATA_DIR, pattern = "\\.docx$",
                          full.names = TRUE, recursive = FALSE)
-all_files  <- c(pdf_files, docx_files)
+html_files <- list.files(DATA_DIR, pattern = "\\.html?$",
+                         full.names = TRUE, recursive = FALSE)
+txt_files  <- list.files(DATA_DIR, pattern = "\\.txt$",
+                         full.names = TRUE, recursive = FALSE)
+md_files   <- list.files(DATA_DIR, pattern = "\\.md$",
+                         full.names = TRUE, recursive = FALSE)
+all_files  <- c(pdf_files, docx_files, html_files, txt_files, md_files)
 
 if (length(all_files) == 0) {
-  stop("No PDF or DOCX files found in '", DATA_DIR, "/'. Add documents and try again.")
+  stop("No supported files found in '", DATA_DIR, "/'.", " Add documents and try again.")
 }
 
 message("Found ", length(all_files), " document(s) to ingest:")
-message("  ", length(pdf_files), " PDF(s), ", length(docx_files), " DOCX(s)")
+message("  ", length(pdf_files), " PDF(s), ", length(docx_files), " DOCX(s), ",
+        length(html_files), " HTML(s), ", length(txt_files), " TXT(s), ", length(md_files), " MD(s)")
 for (f in all_files) message("  ", f)
 
 # =============================================================================
@@ -114,6 +125,30 @@ extract_docx <- function(path) {
   paste(paragraphs, collapse = "\n\n")
 }
 
+# HTML → plain text using xml2 + rvest
+# Removes <script> and <style> nodes before extracting visible text.
+extract_html <- function(path) {
+  if (!file.exists(path)) stop("File not found: ", path)
+  page <- xml2::read_html(path)
+  xml2::xml_remove(xml2::xml_find_all(page, "//script"))
+  xml2::xml_remove(xml2::xml_find_all(page, "//style"))
+  rvest::html_text(page, trim = TRUE)
+}
+
+# TXT → plain text using readr
+extract_txt <- function(path) {
+  if (!file.exists(path)) stop("File not found: ", path)
+  readr::read_file(path)
+}
+
+# Markdown → plain text using commonmark
+# Strips Markdown syntax (headings, bold, links, etc.) leaving prose only.
+extract_md <- function(path) {
+  if (!file.exists(path)) stop("File not found: ", path)
+  raw <- readr::read_file(path)
+  trimws(commonmark::markdown_text(raw))
+}
+
 # Dispatcher: choose extraction method based on file extension
 extract_text <- function(path) {
 
@@ -121,6 +156,10 @@ extract_text <- function(path) {
   switch(ext,
     pdf  = extract_pdf(path),
     docx = extract_docx(path),
+    html = extract_html(path),
+    htm  = extract_html(path),
+    txt  = extract_txt(path),
+    md   = extract_md(path),
     stop("Unsupported file type: ", ext)
   )
 }
@@ -189,10 +228,16 @@ all_chunks <- lapply(all_files, function(path) {
 #   files that have changed.
 
 message("\nCreating store: ", STORE_PATH)
+# Delete the file first so DuckDB never opens it in read-only mode,
+# which would cause a DROP error when overwrite = TRUE is attempted.
+if (file.exists(STORE_PATH)) {
+  file.remove(STORE_PATH)
+  message("  Removed existing store file.")
+}
 store <- ragnar_store_create(
   location  = STORE_PATH,
   embed     = NULL,
-  overwrite = TRUE
+  overwrite = FALSE
 )
 
 # =============================================================================
