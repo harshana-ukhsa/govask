@@ -1,18 +1,18 @@
 # =============================================================================
-# epi_setup.R — EpiAsk RAG Pipeline: Document Ingestion & Indexing
+# api_setup.R — APIAsk RAG Pipeline: Document Ingestion & Indexing
 # =============================================================================
 #
 # PURPOSE
 # -------
-# Builds the DuckDB store for the EpiAsk tab by indexing all documents in
-# data/epids_files/. Identical pipeline to rag_setup.R — only the source
-# directory and store output path differ.
+# Builds the DuckDB store for the APIAsk tab by indexing all documents in
+# data/govapi_files/. These are documents downloaded from the GOV.UK API
+# (e.g. UKHSA guidance).
 #
 # USAGE
-#   source("ref_code/epi_setup.R")   # from R console (project root)
+#   source("ref_code/api_setup.R")   # from R console (project root)
 #
 # PREREQUISITES
-#   1. Documents placed in data/epids_files/
+#   1. Documents downloaded to data/govapi_files/ (via govuk_api.R)
 #   2. Packages installed: source("install_packages.R")
 # =============================================================================
 
@@ -26,19 +26,14 @@ library(commonmark)
 library(here)
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-DATA_DIR   <- here::here("data", "epids_files")
-STORE_PATH <- here::here("data", "epids_store.duckdb")
+DATA_DIR   <- here::here("data", "govapi_files")
+STORE_PATH <- here::here("data", "api_store.duckdb")
 
 # Create directory if it doesn't exist
 if (!dir.exists(DATA_DIR)) {
   dir.create(DATA_DIR, recursive = TRUE)
   message("Created directory: ", DATA_DIR)
 }
-
-# ── Delegate to the shared setup logic ────────────────────────────────────────
-# Override the path constants then source rag_setup.R, skipping its own
-# library() and path-definition lines by setting a flag first.
-# We instead re-implement the steps directly to keep this self-contained.
 
 # ── Step 1: Discover files ────────────────────────────────────────────────────
 all_files <- list.files(
@@ -50,7 +45,7 @@ all_files <- list.files(
 )
 
 if (length(all_files) == 0) {
-  message("No supported files found in EpiAsk directory. Skipping store creation.")
+  message("No supported files found in APIAsk directory. Skipping store creation.")
   return(invisible(NULL))
 }
 
@@ -117,12 +112,14 @@ all_chunks <- lapply(all_files, function(path) {
 all_chunks <- Filter(Negate(is.null), all_chunks)
 
 if (length(all_chunks) == 0) {
-  stop("No chunks produced — check that documents contain extractable text.")
+  message("No chunks produced — check that documents contain extractable text.")
+  return(invisible(NULL))
 }
 
 # ── Step 4: Create the DuckDB store ──────────────────────────────────────────
-message("\nCreating EpiAsk store: ", STORE_PATH)
+message("\nCreating APIAsk store: ", STORE_PATH)
 store <- ragnar_store_create(location = STORE_PATH, embed = NULL, overwrite = TRUE)
+
 # ── Step 5: Insert chunks ─────────────────────────────────────────────────────
 for (chunks in all_chunks) {
   ragnar_store_insert(store, chunks)
@@ -135,8 +132,8 @@ ragnar_store_build_index(store)
 # ── Summary ───────────────────────────────────────────────────────────────────
 total_chunks <- sum(vapply(all_chunks, nrow, integer(1L)))
 message(
-  "\nDone. Indexed ", length(all_chunks), " document(s), ",
+ "\nDone. Indexed ", length(all_chunks), " document(s), ",
   total_chunks, " chunk(s) total.\n",
   "Store saved to: ", STORE_PATH, "\n",
-  "You can now run shiny::runApp(\"R\") to use the EpiAsk tab."
+  "You can now run shiny::runApp(\"R\") to use the APIAsk tab."
 )
