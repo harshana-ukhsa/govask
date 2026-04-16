@@ -241,7 +241,7 @@ if (file.exists(STORE_PATH)) {
 store <- ragnar_store_create(
   location  = STORE_PATH,
   embed     = NULL,
-  overwrite = FALSE
+  overwrite = TRUE
 )
 
 # =============================================================================
