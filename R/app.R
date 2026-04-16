@@ -8,6 +8,8 @@ library(here)
 library(duckdb)
 library(commonmark)
 
+`%||%` <- function(x, y) if (!is.null(x)) x else y
+
 get_app_dir <- function() {
   file_arg_prefix <- "--file="
   args <- commandArgs(trailingOnly = FALSE)
@@ -60,7 +62,7 @@ tryCatch(
   }
 )
 
-message("  [3/3] Loading rag_query.R helpers...")
+message("  [3/3] Loading rag_query.R and epi_query.R helpers...")
 
 # Load reusable RAG helpers into an app-scoped environment so that
 # CLI-oriented top-level code does not pollute the Shiny app environment.
@@ -68,6 +70,7 @@ rag_query_env <- new.env(parent = globalenv())
 rag_query_error <- tryCatch(
   {
     sys.source(here::here("ref_code", "rag_query.R"), envir = rag_query_env)
+    sys.source(here::here("ref_code", "epi_query.R"), envir = rag_query_env)
     NULL
   },
   error = function(e) {
@@ -99,6 +102,19 @@ STORE_PATH     <- here::here("data", "rag_store.duckdb")
 EPI_STORE_PATH <- here::here("data", "epids_store.duckdb")
 TOP_K          <- 5L
 
+#' Dispatch to the correct per-namespace category derivation function
+#'
+#' @param origins character vector of file paths from the store
+#' @param ns      namespace string ("gov" or "epi")
+#' @return sorted character vector of category labels
+derive_categories_from_store <- function(origins, ns) {
+  switch(ns,
+    gov = derive_gov_categories(origins),
+    epi = derive_epi_categories(origins),
+    "Other"
+  )
+}
+
 # ── Server ────────────────────────────────────────────────────────────────────
 server <- function(input, output, session) {
 
@@ -112,6 +128,9 @@ server <- function(input, output, session) {
       sources        = NULL,
       low_confidence = FALSE
     )
+
+    # Cache for auto-derived categories (populated asynchronously by LLM)
+    categories_cache <- reactiveVal(NULL)
 
     # Store connection
     store <- tryCatch(
@@ -153,6 +172,43 @@ server <- function(input, output, session) {
       tags$div(
         tags$p(paste0(n_docs, " documents indexed")),
         tags$p(paste0(n_chunks, " chunks searchable"))
+      )
+    })
+
+    # ── Document themes ────────────────────────────────────────────────────────
+    # Derived by pattern-matching the actual filenames in the store.
+    # Updates automatically when new files are indexed and the store rebuilt.
+    observe({
+      if (!is.null(categories_cache())) return()
+      if (is.null(meta_con)) return()
+      origins <- tryCatch(
+        DBI::dbGetQuery(
+          meta_con,
+          "SELECT DISTINCT origin FROM chunks WHERE origin IS NOT NULL"
+        )$origin,
+        error = function(e) character(0)
+      )
+      if (length(origins) == 0) return()
+      categories_cache(derive_categories_from_store(origins, ns))
+    })
+
+    output[[paste0(ns, "_categories")]] <- renderUI({
+      cats <- categories_cache()
+      if (is.null(cats)) {
+        return(tags$p(style = "color:#888; font-style:italic;", "Deriving themes..."))
+      }
+      tags$div(
+        lapply(cats, function(cat) {
+          tags$div(
+            style = paste(
+              "display:inline-block; margin:2px 2px 4px 0;",
+              "padding:3px 10px; border-radius:12px;",
+              "background:#E6F4F1; color:#1A7A6E;",
+              "font-size:13px; font-weight:500;"
+            ),
+            cat
+          )
+        })
       )
     })
 

@@ -21,6 +21,9 @@ rag_tab_panel <- function(
         h5("Document corpus"),
         uiOutput(paste0(ns, "_corpus_summary")),
         hr(),
+        h5("Document themes"),
+        uiOutput(paste0(ns, "_categories")),
+        hr(),
         h5("Filter by file type"),
         uiOutput(paste0(ns, "_type_filter"))
       ),
