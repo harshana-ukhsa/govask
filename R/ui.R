@@ -7,10 +7,7 @@ library(shinycssloaders)
 GOVUK_BLACK  <- "#0b0c0c"
 GOVUK_BLUE   <- "#1d70b8"
 GOVUK_GREEN  <- "#00703c"
-GOVUK_YELLOW <- "#ffdd00"
 GOVUK_RED    <- "#d4351c"
-GOVUK_LGREY  <- "#f3f2f1"
-GOVUK_MGREY  <- "#b1b4b6"
 
 # ── GOV.UK CSS ────────────────────────────────────────────────────────────────
 govuk_css <- tags$style(HTML("
