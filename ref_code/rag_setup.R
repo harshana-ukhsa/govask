@@ -75,8 +75,7 @@ library(here)       # here: reliable path resolution regardless of working direc
 STORE_PATH       <- here::here("data", "rag_store.duckdb")
 DATA_DIRS        <- c(
   here::here("data", "structured_files"),
-  here::here("data", "unstructured_files"),
-  here::here("data", "epids_files")
+  here::here("data", "unstructured_files")
 )
 
 # =============================================================================

@@ -13,6 +13,7 @@ pkgs <- c(
   "ragnar",
   "ellmer",
   "httr2",
+  "rlang",
 
   # Document parsers
   "pdftools",
