@@ -8,10 +8,11 @@ library(shinycssloaders)
 # All output IDs are namespaced with `ns_` to avoid collisions between tabs.
 rag_tab_panel <- function(
   tab_title,
+  full_title,
   ns,                  # namespace prefix string, e.g. "gov" or "epi"
   question_placeholder = "e.g. What is the eligibility threshold for housing support?"
 ) {
-  tabPanel(
+  bslib::nav_panel(
     tab_title,
     br(),
     sidebarLayout(
@@ -25,6 +26,8 @@ rag_tab_panel <- function(
       ),
       mainPanel(
         width = 9,
+        h3(full_title),
+        hr(),
 
         # ── Question input ─────────────────────────────────────────────────
         textAreaInput(
@@ -66,18 +69,25 @@ rag_tab_panel <- function(
 }
 
 # ── UI ────────────────────────────────────────────────────────────────────────
-ui <- navbarPage(
-  title = "GovAsk",
-  theme = bslib::bs_theme(bootswatch = "flatly"),
+ui <- bslib::page_navbar(
+  title  = "GovAsk",
+  theme  = bslib::bs_theme(bootswatch = "flatly"),
+  fluid  = TRUE,
+  header = tags$style(HTML("
+    .navbar-toggler { display: none !important; }
+    .navbar-collapse { display: flex !important; }
+  ")),
 
   rag_tab_panel(
-    tab_title            = "GovAsk \u2014 Government Document Intelligence",
+    tab_title            = "GovAsk",
+    full_title           = "GovAsk \u2014 Government Document Intelligence",
     ns                   = "gov",
     question_placeholder = "e.g. What is the eligibility threshold for housing support?"
   ),
 
   rag_tab_panel(
-    tab_title            = "EpiAsk \u2014 EpiDS Document Intelligence",
+    tab_title            = "EpiAsk",
+    full_title           = "EpiAsk \u2014 EpiDS Document Intelligence",
     ns                   = "epi",
     question_placeholder = "e.g. What are the methods used in the latest EpiDS report?"
   )
