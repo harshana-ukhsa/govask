@@ -308,7 +308,7 @@ server <- function(input, output, session) {
       }
       warning_div <- if (isTRUE(state$low_confidence)) {
         tags$div(
-          style = "color:#D4860B; font-weight:bold; margin-bottom:10px;",
+          style = "color:#d4351c; font-weight:bold; margin-bottom:10px;",
           "\u26A0 Low confidence \u2014 retrieved context may not directly address this question."
         )
       } else NULL
@@ -317,9 +317,9 @@ server <- function(input, output, session) {
         warning_div,
         tags$div(
           style = paste(
-            "background:#E6F4F1; padding:14px;",
-            "border-left:5px solid #1A7A6E;",
-            "border-radius:4px;",
+            "background:#f3f2f1; padding:14px;",
+            "border-left:5px solid #1d70b8;",
+            "border-radius:0;",
             "font-size:15px; line-height:1.6;"
           ),
           HTML(commonmark::markdown_html(state$answer))
