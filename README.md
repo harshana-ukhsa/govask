@@ -3,7 +3,7 @@
 > **AI Engineering Lab Hackathon 2026 · Challenge 2: Unlocking the Dark Data**  
 > Team: Harshana · Emma · Freddie · UKHSA Epidemiology Data Science
 
-[View presentation slides →](https://raw.githubusercontent.com/harshana-ukhsa/govask/dev/docs/presentation.html)
+[View presentation slides →](https://htmlpreview.github.io/?https://raw.githubusercontent.com/harshana-ukhsa/govask/dev/docs/presentation.html)
 
 ---
 
