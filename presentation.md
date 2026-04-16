@@ -123,26 +123,30 @@ This is not a failure of effort. **It is a failure of infrastructure.**
 
 # What we built
 
-- **R-only RAG pipeline** — no Python, no external binaries, runs on restricted government laptops
-- **Multi-format ingestion** — PDF, DOCX, HTML, TXT, Markdown parsed and chunked automatically
-- **BM25 full-text search** — fast, transparent keyword retrieval via DuckDB
-- **Grounded LLM answers** — every response cites the source document by filename
-- **Shiny web interface** — question in, auditable answer + source table out
+A single Shiny app with **three complementary interfaces**:
+
+- **GovAsk** — query a curated local corpus of government guidance; every answer cites its source
+- **APIAsk** — fetches live UKHSA guidance from the GOV.UK API on startup; always current, no manual uploads
+- **EpiAsk** — same pipeline pointed at internal documents; our path to querying UKHSA's Confluence knowledge base
+
+All grounded in retrieved documents · all answers cite sources · BM25 confidence detection throughout
 
 ---
 
 # Architecture
 
 ```
-Documents (PDF · DOCX · HTML · TXT · MD)
-    ↓  rag_setup.R — extract & chunk
-data/rag_store.duckdb — BM25 index
-    ↓  rag_query.R — retrieval + prompt + LLM
-    ↓  app.R — R Shiny browser interface
+Local files · GOV.UK API · Internal docs
+    ↓  rag_setup / api_setup / epi_setup — extract & chunk
+rag_store.duckdb · api_store.duckdb · epids_store.duckdb
+    ↓  rag_query.R — shared retrieval + prompt + LLM
+    ↓  R/app.R — GovAsk │ APIAsk │ EpiAsk
 ```
 
+**APIAsk:** on startup → GOV.UK Search API → Content API → live BM25 index
+
 Internally-hosted LLM on OpenShift AI — no data leaves the network.
-Full corpus indexed in **< 2 minutes**. Query response typically **< 5 seconds**.
+Indexed in **< 2 minutes** · query response **< 5 seconds**
 
 ---
 
@@ -152,37 +156,41 @@ Full corpus indexed in **< 2 minutes**. Query response typically **< 5 seconds**
 
 | Layer | File | Purpose |
 |---|---|---|
-| Always-on | `copilot-instructions.md` | Project architecture, packages, conventions |
-| On-demand | `Skills` × 3 | Prompt engineering, UI components, presentation |
+| Always-on | `copilot-instructions.md` | Architecture, packages, LLM endpoint, conventions |
+| File-scoped | `.instructions.md` × 3 | R standards · Shiny patterns · RAG pipeline rules |
+| On-demand | `Skills` × 3 | Prompt engineering · UI components · presentation |
 
-**What changed:** RAG prompt engineering, multi-format parsers, and Shiny UI components generated in Agent mode sessions using purpose-built skills — function signatures, error handling, and citation logic produced correctly on the first attempt.
+**What changed:** The GOV.UK API client, three-tab Shiny server, and all prompt engineering were generated in Agent mode using purpose-built Skills. Two team members built different tabs in parallel — consistent output because the Skills defined the contract in advance.
 
 ---
 
 # Security and data governance
 
-- **No data leaves the internal network** — self-hosted LLM on UKHSA OpenShift AI cluster
+- **No data leaves the internal network** — GPT-OSS 120B on UKHSA's OpenShift AI cluster
 - **Zero commercial training use** — architectural guarantee, not a vendor promise
 - **Credentials never in version control** — `.Renviron` git-ignored
-- **Read-only store connection** — Shiny app cannot modify the index
-- **Documents never leave source location** — only extracted text written to DuckDB
+- **Read-only store connections** — Shiny app cannot corrupt the index
+- **GOV.UK API calls are read-only and public** — no authentication, no data submission
 
-> The self-hosted model means query data cannot be collected or used for commercial training under any future change in vendor terms.
+> Self-hosted model = query data categorically cannot be used for commercial training, regardless of any future vendor terms change.
 
 ---
 
-# Path to production
+# Beyond the hackathon
 
-**Engineering next steps (prioritised):**
+**Our team's next step:** connect EpiAsk to UKHSA's **Confluence REST API**
+→ instant cited answers from SOPs, data standards, and surveillance system docs
+→ no architecture changes — one new folder, one new setup script, one new tab
 
-1. **Audit logging** — governance requirement, not a feature
-2. **Structured evaluation framework** — controlled model upgrade process
+**Roadmap:**
+
+1. **Confluence integration** — live institutional knowledge queries
+2. **Audit logging** — governance requirement, not a feature
 3. **Hybrid retrieval** — BM25 + semantic re-ranking, closes synonym gap
-4. **GOV.UK Content API** — keeps corpus current automatically
+4. **Evaluation framework** — controlled model upgrade process
 
 **Before operational deployment:**
-Information governance review · WCAG 2.1 AA accessibility audit ·
-Human-in-the-loop policy · Load testing
+IG review · WCAG 2.1 AA audit · Human-in-the-loop policy
 
 ---
 

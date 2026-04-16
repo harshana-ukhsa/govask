@@ -573,13 +573,13 @@ footer {
 }
 ;" data-marpit-pagination-total="8">
 <h1 id="what-we-built">What we built</h1>
+<p>A single Shiny app with <strong>three complementary interfaces</strong>:</p>
 <ul>
-<li><strong>R-only RAG pipeline</strong> — no Python, no external binaries, runs on restricted government laptops</li>
-<li><strong>Multi-format ingestion</strong> — PDF, DOCX, HTML, TXT, Markdown parsed and chunked automatically</li>
-<li><strong>BM25 full-text search</strong> — fast, transparent keyword retrieval via DuckDB</li>
-<li><strong>Grounded LLM answers</strong> — every response cites the source document by filename</li>
-<li><strong>Shiny web interface</strong> — question in, auditable answer + source table out</li>
+<li><strong>GovAsk</strong> — query a curated local corpus of government guidance; every answer cites its source</li>
+<li><strong>APIAsk</strong> — fetches live UKHSA guidance from the GOV.UK API on startup; always current, no manual uploads</li>
+<li><strong>EpiAsk</strong> — same pipeline pointed at internal documents; our path to querying UKHSA's Confluence knowledge base</li>
 </ul>
+<p>All grounded in retrieved documents · all answers cite sources · BM25 confidence detection throughout</p>
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="4" data-paginate="true" data-theme="default" data-style=":root {
   --color-background: #FFFFFF;
@@ -765,14 +765,15 @@ footer {
 }
 ;" data-marpit-pagination-total="8">
 <h1 id="architecture">Architecture</h1>
-<pre is="marp-pre" data-auto-scaling="downscale-only"><code>Documents (PDF · DOCX · HTML · TXT · MD)
-    ↓  rag_setup.R — extract &amp; chunk
-data/rag_store.duckdb — BM25 index
-    ↓  rag_query.R — retrieval + prompt + LLM
-    ↓  app.R — R Shiny browser interface
+<pre is="marp-pre" data-auto-scaling="downscale-only"><code>Local files · GOV.UK API · Internal docs
+    ↓  rag_setup / api_setup / epi_setup — extract &amp; chunk
+rag_store.duckdb · api_store.duckdb · epids_store.duckdb
+    ↓  rag_query.R — shared retrieval + prompt + LLM
+    ↓  R/app.R — GovAsk │ APIAsk │ EpiAsk
 </code></pre>
+<p><strong>APIAsk:</strong> on startup → GOV.UK Search API → Content API → live BM25 index</p>
 <p>Internally-hosted LLM on OpenShift AI — no data leaves the network.<br />
-Full corpus indexed in <strong>&lt; 2 minutes</strong>. Query response typically <strong>&lt; 5 seconds</strong>.</p>
+Indexed in <strong>&lt; 2 minutes</strong> · query response <strong>&lt; 5 seconds</strong></p>
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="5" data-paginate="true" data-theme="default" data-style=":root {
   --color-background: #FFFFFF;
@@ -971,16 +972,21 @@ footer {
 <tr>
 <td>Always-on</td>
 <td><code>copilot-instructions.md</code></td>
-<td>Project architecture, packages, conventions</td>
+<td>Architecture, packages, LLM endpoint, conventions</td>
+</tr>
+<tr>
+<td>File-scoped</td>
+<td><code>.instructions.md</code> × 3</td>
+<td>R standards · Shiny patterns · RAG pipeline rules</td>
 </tr>
 <tr>
 <td>On-demand</td>
 <td><code>Skills</code> × 3</td>
-<td>Prompt engineering, UI components, presentation</td>
+<td>Prompt engineering · UI components · presentation</td>
 </tr>
 </tbody>
 </table>
-<p><strong>What changed:</strong> RAG prompt engineering, multi-format parsers, and Shiny UI components generated in Agent mode sessions using purpose-built skills — function signatures, error handling, and citation logic produced correctly on the first attempt.</p>
+<p><strong>What changed:</strong> The GOV.UK API client, three-tab Shiny server, and all prompt engineering were generated in Agent mode using purpose-built Skills. Two team members built different tabs in parallel — consistent output because the Skills defined the contract in advance.</p>
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="6" data-paginate="true" data-theme="default" data-style=":root {
   --color-background: #FFFFFF;
@@ -1167,14 +1173,14 @@ footer {
 ;" data-marpit-pagination-total="8">
 <h1 id="security-and-data-governance">Security and data governance</h1>
 <ul>
-<li><strong>No data leaves the internal network</strong> — self-hosted LLM on UKHSA OpenShift AI cluster</li>
+<li><strong>No data leaves the internal network</strong> — GPT-OSS 120B on UKHSA's OpenShift AI cluster</li>
 <li><strong>Zero commercial training use</strong> — architectural guarantee, not a vendor promise</li>
 <li><strong>Credentials never in version control</strong> — <code>.Renviron</code> git-ignored</li>
-<li><strong>Read-only store connection</strong> — Shiny app cannot modify the index</li>
-<li><strong>Documents never leave source location</strong> — only extracted text written to DuckDB</li>
+<li><strong>Read-only store connections</strong> — Shiny app cannot corrupt the index</li>
+<li><strong>GOV.UK API calls are read-only and public</strong> — no authentication, no data submission</li>
 </ul>
 <blockquote>
-<p>The self-hosted model means query data cannot be collected or used for commercial training under any future change in vendor terms.</p>
+<p>Self-hosted model = query data categorically cannot be used for commercial training, regardless of any future vendor terms change.</p>
 </blockquote>
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="7" data-paginate="true" data-theme="default" data-style=":root {
@@ -1360,17 +1366,19 @@ footer {
   color: #4A5568;
 }
 ;" data-marpit-pagination-total="8">
-<h1 id="path-to-production">Path to production</h1>
-<p><strong>Engineering next steps (prioritised):</strong></p>
+<h1 id="beyond-the-hackathon">Beyond the hackathon</h1>
+<p><strong>Our team's next step:</strong> connect EpiAsk to UKHSA's <strong>Confluence REST API</strong><br />
+→ instant cited answers from SOPs, data standards, and surveillance system docs<br />
+→ no architecture changes — one new folder, one new setup script, one new tab</p>
+<p><strong>Roadmap:</strong></p>
 <ol>
+<li><strong>Confluence integration</strong> — live institutional knowledge queries</li>
 <li><strong>Audit logging</strong> — governance requirement, not a feature</li>
-<li><strong>Structured evaluation framework</strong> — controlled model upgrade process</li>
 <li><strong>Hybrid retrieval</strong> — BM25 + semantic re-ranking, closes synonym gap</li>
-<li><strong>GOV.UK Content API</strong> — keeps corpus current automatically</li>
+<li><strong>Evaluation framework</strong> — controlled model upgrade process</li>
 </ol>
 <p><strong>Before operational deployment:</strong><br />
-Information governance review · WCAG 2.1 AA accessibility audit ·<br />
-Human-in-the-loop policy · Load testing</p>
+IG review · WCAG 2.1 AA audit · Human-in-the-loop policy</p>
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="8" data-paginate="true" data-theme="default" data-style=":root {
   --color-background: #FFFFFF;
